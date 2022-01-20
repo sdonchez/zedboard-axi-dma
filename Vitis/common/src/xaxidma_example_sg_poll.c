@@ -99,7 +99,8 @@ extern void xil_printf(const char *format, ...);
  * Device hardware build related constants.
  */
 
-#define DMA_DEV_ID		XPAR_AXIDMA_0_DEVICE_ID
+#define DMA_DEV_ID0		XPAR_AXIDMA_0_DEVICE_ID
+#define DMA_DEV_ID1		XPAR_AXIDMA_1_DEVICE_ID
 
 #ifdef XPAR_AXI_7SDDR_0_S_AXI_BASEADDR
 #define DDR_BASE_ADDR		XPAR_AXI_7SDDR_0_S_AXI_BASEADDR
@@ -148,13 +149,14 @@ static int RxSetup(XAxiDma * AxiDmaInstPtr);
 static int TxSetup(XAxiDma * AxiDmaInstPtr);
 static int SendPacket(XAxiDma * AxiDmaInstPtr);
 static int CheckData(void);
-static int CheckDmaResult(XAxiDma * AxiDmaInstPtr);
+static int CheckDmaResult(XAxiDma * AxiDmaInstPtrTx, XAxiDma * AxiDmaInstPtrRx);
 
 /************************** Variable Definitions *****************************/
 /*
  * Device instance definitions
  */
-XAxiDma AxiDma;
+XAxiDma AxiDma0;
+XAxiDma AxiDma1;
 
 /*
  * Buffer for transmit packet. Must be 32-bit aligned to be used by DMA.
@@ -183,7 +185,8 @@ u32 *Packet = (u32 *) TX_BUFFER_BASE;
 int main(void)
 {
 	int Status;
-	XAxiDma_Config *Config;
+	XAxiDma_Config *Config0;
+	XAxiDma_Config *Config1;
 
 #if defined(XPAR_UARTNS550_0_BASEADDR)
 
@@ -198,44 +201,75 @@ int main(void)
 	Xil_SetTlbAttributes(RX_BD_SPACE_BASE, MARK_UNCACHEABLE);
 #endif
 
-	Config = XAxiDma_LookupConfig(DMA_DEV_ID);
-	if (!Config) {
-		xil_printf("No config found for %d\r\n", DMA_DEV_ID);
+	Config0 = XAxiDma_LookupConfig(DMA_DEV_ID0);
+	if (!Config0) {
+		xil_printf("No config found for %d\r\n", DMA_DEV_ID0);
 
 		return XST_FAILURE;
 	}
 
+	Config1 = XAxiDma_LookupConfig(DMA_DEV_ID1);
+	if (!Config1) {
+		xil_printf("No config found for %d\r\n", DMA_DEV_ID1);
+
+		return XST_FAILURE;
+	}
+
+
 	/* Initialize DMA engine */
-	Status = XAxiDma_CfgInitialize(&AxiDma, Config);
+	Status = XAxiDma_CfgInitialize(&AxiDma0, Config0);
 	if (Status != XST_SUCCESS) {
 		xil_printf("Initialization failed %d\r\n", Status);
 		return XST_FAILURE;
 	}
 
-	if(!XAxiDma_HasSg(&AxiDma)) {
-		xil_printf("Device configured as Simple mode \r\n");
+	Status = XAxiDma_CfgInitialize(&AxiDma1, Config1);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Initialization failed %d\r\n", Status);
+		return XST_FAILURE;
+	}
+
+	if(!XAxiDma_HasSg(&AxiDma0)) {
+		xil_printf("Device 0 configured as Simple mode \r\n");
 
 		return XST_FAILURE;
 	}
 
-	Status = TxSetup(&AxiDma);
+	if(!XAxiDma_HasSg(&AxiDma1)) {
+		xil_printf("Device 1 configured as Simple mode \r\n");
+
+		return XST_FAILURE;
+	}
+
+
+	Status = TxSetup(&AxiDma0);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 
-	Status = RxSetup(&AxiDma);
+	Status = RxSetup(&AxiDma0);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	Status = TxSetup(&AxiDma1);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	Status = RxSetup(&AxiDma1);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 
 	/* Send a packet */
-	Status = SendPacket(&AxiDma);
+	Status = SendPacket(&AxiDma0);
 	if (Status != XST_SUCCESS) {
 		return XST_FAILURE;
 	}
 
 	/* Check DMA transfer result */
-	Status = CheckDmaResult(&AxiDma);
+	Status = CheckDmaResult(&AxiDma0, &AxiDma1);
 
 	if (Status != XST_SUCCESS) {
 		xil_printf("AXI DMA SG Polling Example Failed\r\n");
@@ -306,7 +340,7 @@ static int RxSetup(XAxiDma * AxiDmaInstPtr)
 	UINTPTR RxBufferPtr;
 	int Index;
 
-	RxRingPtr = XAxiDma_GetRxRing(&AxiDma);
+	RxRingPtr = XAxiDma_GetRxRing(AxiDmaInstPtr);
 
 	/* Disable all RX interrupts before RxBD space setup */
 
@@ -429,7 +463,7 @@ static int TxSetup(XAxiDma * AxiDmaInstPtr)
 	int Status;
 	u32 BdCount;
 
-	TxRingPtr = XAxiDma_GetTxRing(&AxiDma);
+	TxRingPtr = XAxiDma_GetTxRing(AxiDmaInstPtr);
 
 	/* Disable all TX interrupts before TxBD space setup */
 
@@ -625,7 +659,7 @@ static int CheckData(void)
 * @note		None.
 *
 ******************************************************************************/
-static int CheckDmaResult(XAxiDma * AxiDmaInstPtr)
+static int CheckDmaResult(XAxiDma * AxiDmaInstPtrTx, XAxiDma * AxiDmaInstPtrRx)
 {
 	XAxiDma_BdRing *TxRingPtr;
 	XAxiDma_BdRing *RxRingPtr;
@@ -634,8 +668,8 @@ static int CheckDmaResult(XAxiDma * AxiDmaInstPtr)
 	int FreeBdCount;
 	int Status;
 
-	TxRingPtr = XAxiDma_GetTxRing(AxiDmaInstPtr);
-	RxRingPtr = XAxiDma_GetRxRing(AxiDmaInstPtr);
+	TxRingPtr = XAxiDma_GetTxRing(AxiDmaInstPtrTx);
+	RxRingPtr = XAxiDma_GetRxRing(AxiDmaInstPtrRx);
 
 	/* Wait until the one BD TX transaction is done */
 	while ((ProcessedBdCount = XAxiDma_BdRingFromHw(TxRingPtr,
