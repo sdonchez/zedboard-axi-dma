@@ -33,7 +33,7 @@ set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set obj [get_projects $design_name]
-set_property -name "board_part_repo_paths" -value "[file normalize "$origin_dir/../../../../AppData/Roaming/Xilinx/Vivado/2020.2/xhub/board_store/xilinx_board_store"]" -objects $obj
+set_property -name "board_part_repo_paths" -value "[file normalize "$origin_dir/boardRepo"]" -objects $obj
 set_property -name "board_part" -value "tul.com.tw:pynqzu:part0:1.1" -objects $obj
 set_property -name "default_lib" -value "xil_defaultlib" -objects $obj
 set_property -name "ip_cache_permissions" -value "read write" -objects $obj
