@@ -1,0 +1,36 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.205.1/containers/docker-existing-dockerfile
+{
+	"name": "Existing Dockerfile",
+
+	// Sets the run context to one level up instead of the .devcontainer folder.
+	"context": "..",
+
+	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
+	"dockerFile": "./Dockerfile",
+
+	"build": { "args": { "VIVADO_VERSION": "2020.2", "PETA_RUN_FILE": "petalinux-v2020.2-final-installer.run", "VIVADO_TAR_FILE": "Xilinx_Unified_2020.2_1118_1232" } },
+	// Set *default* container specific settings.json values on container create.
+	"settings": {},
+
+	"runArgs": ["-ti", "--rm" , "-e DISPLAY=host.docker.internal:0.0", "-e LIBGL_ALWAYS_INDIRECT=0"],
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	 "forwardPorts": [69],
+
+	// Uncomment the next line to run commands after the container is created - for example installing curl.
+	// "postCreateCommand": "apt-get update && apt-get install -y curl",
+
+	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
+	// "runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
+
+	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
+	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
+	"mounts": ["source=${localEnv:HOME}/SStateCache,target=/mnt/SStateCache,type=bind,consistency=cached"],
+	
+	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
+	 "remoteUser": "vivado",
+}
