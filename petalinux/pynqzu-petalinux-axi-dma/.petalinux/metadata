@@ -1,0 +1,6 @@
+PETALINUX_VER=2020.2
+VALIDATE_HW_CHKSUM=1
+HARDWARE_PATH=/home/sgdon/zedboard-axi-dma/Vivado/pynq_zu_axi_dma.xsa
+HARDWARE_CHECKSUM=abb555f0db0cf1274cf26a6e4fda6b7c
+YOCTO_SDK=267ec34beec0964aff190e9bebb3cc43
+RFSCONFIG_CHKSUM=dd815b6b69d53958d080e4cb9b06ddde
