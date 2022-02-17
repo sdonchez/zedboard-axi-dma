@@ -7,3 +7,4 @@ Vitis/.analytics
 Vitis/boot/
 Vitis/*_axi_dma*/
 Vitis/*_test_app*/
+sd/
