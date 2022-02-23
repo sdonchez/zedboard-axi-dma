@@ -1,5 +1,5 @@
 #
-# build.tcl: Tcl script for re-creating project 'pynq_zu_axi_dma'
+# build.tcl: Tcl script for re-creating project 'AXU2CGB_axi_dma'
 #
 #*****************************************************************************************
 
@@ -17,7 +17,7 @@ if {![string equal $ver $version_required]} {
   return
 }
 
-set design_name pynq_zu_axi_dma
+set design_name AXU2CGB_axi_dma
 
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."
@@ -33,8 +33,8 @@ set proj_dir [get_property directory [current_project]]
 
 # Set project properties
 set obj [get_projects $design_name]
-set_property -name "board_part_repo_paths" -value "[file normalize "$origin_dir/boardRepo"]" -objects $obj
-set_property -name "board_part" -value "tul.com.tw:pynqzu:part0:1.1" -objects $obj
+# set_property part xczu2cg-sfvc784-1-i [current_project]
+set_property -name "part" -value "xczu2cg-sfvc784-1-i" -objects $obj
 set_property -name "default_lib" -value "xil_defaultlib" -objects $obj
 set_property -name "ip_cache_permissions" -value "read write" -objects $obj
 set_property -name "ip_output_repo" -value "$proj_dir/$design_name.cache/ip" -objects $obj
